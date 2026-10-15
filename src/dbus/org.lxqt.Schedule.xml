@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<!--
+  LXQt Schedule D-Bus contract.
+
+  Service : org.lxqt.Schedule
+  Path    : /org/lxqt/Schedule
+  Interface: org.lxqt.Schedule
+
+  All timestamps are Unix epoch seconds (UTC). repeat is one of:
+  "" (once), "daily", "weekly", "monthly", "yearly".
+-->
+<node>
+  <interface name="org.lxqt.Schedule">
+    <method name="AddSchedule">
+      <arg name="title" type="s" direction="in"/>
+      <arg name="due_epoch" type="x" direction="in"/>
+      <arg name="repeat" type="s" direction="in"/>
+      <arg name="id" type="x" direction="out"/>
+    </method>
+    <method name="UpdateSchedule">
+      <arg name="id" type="x" direction="in"/>
+      <arg name="title" type="s" direction="in"/>
+      <arg name="due_epoch" type="x" direction="in"/>
+      <arg name="repeat" type="s" direction="in"/>
+      <arg name="ok" type="b" direction="out"/>
+    </method>
+    <method name="RemoveSchedule">
+      <arg name="id" type="x" direction="in"/>
+      <arg name="ok" type="b" direction="out"/>
+    </method>
+    <method name="RemoveAll">
+    </method>
+    <method name="ListSchedules">
+      <arg name="json" type="s" direction="out"/>
+    </method>
+    <signal name="SchedulesChanged"/>
+    <signal name="ScheduleTriggered">
+      <arg name="id" type="x"/>
+      <arg name="title" type="s"/>
+    </signal>
+  </interface>
+</node>

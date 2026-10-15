@@ -1,0 +1,29 @@
+Source: lxqt-schedule
+Section: x11
+Priority: optional
+Maintainer: xiaogang-henry-jdsk <xiaogang.henry@spacemit.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ cmake (>= 3.16),
+ qt6-base-dev,
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Vcs-Git: https://gitlab.dc.com/bianbu/bianbu-star/lxqt-schedule.git
+Vcs-Browser: https://gitlab.dc.com/bianbu/bianbu-star/lxqt-schedule
+
+Package: lxqt-schedule
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends:
+ lxqt-notificationd | notification-daemon,
+Description: LXQt schedule management daemon and command-line client
+ Provides a session D-Bus daemon and command-line client for creating,
+ updating, listing, and removing schedules. Reminders support one-time,
+ daily, weekly, monthly, and yearly recurrence and are stored locally.
+ .
+ Due reminders are delivered through the desktop notification service.
+ Listings mark entries with identical due timestamps as conflicting.
+ Integration resources are available for the LXQt worldclock calendar
+ and the bibit-intent natural language assistant.

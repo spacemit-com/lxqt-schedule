@@ -1,0 +1,22 @@
+lxqt-schedule for Debian and Bianbu
+=================================
+
+The package installs lxqt-schedule, lxqt-schedule-ctl, and an XDG autostart
+entry for LXQt desktop sessions. Log out and back in after installation,
+or start lxqt-schedule manually from a terminal in the desktop session.
+
+The daemon and CLI must run as the same desktop user on the same session
+D-Bus. Running the daemon as root or as a system service is not required.
+A desktop notification service, such as lxqt-notificationd, is needed to
+display reminders.
+
+Schedules are stored in ~/.config/lxqt/schedule.json (or under the
+corresponding XDG_CONFIG_HOME). Removing the package does not remove this
+per-user data. Stop the daemon before manually changing or restoring it.
+
+Use lxqt-schedule-ctl ping to check connectivity and lxqt-schedule-ctl list
+--json to inspect schedules. See README.md for command examples.
+
+Integration resources are installed under /usr/share/doc/lxqt-schedule/.
+The worldclock patch and bibit-intent skill require separate integration;
+they are not automatically applied to other installed packages.

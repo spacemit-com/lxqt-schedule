@@ -1,0 +1,13 @@
+lxqt-schedule source package
+============================
+
+This package uses the 3.0 (native) source format and debhelper compat 13
+with the CMake build system. No separate upstream tarball, generated source,
+or preparatory code-generation step is required.
+
+Install the Build-Depends from debian/control, then run:
+
+    dpkg-buildpackage -us -uc
+
+The native package version follows CMakeLists.txt. The changelog distribution
+and debian/bianbu.conf retain the Bianbu resolute-customization target.

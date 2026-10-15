@@ -1,0 +1,41 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: lxqt-schedule
+Upstream-Contact: <preferred name and address to reach the upstream project>
+Source: <url://example.com>
+#
+# Please double check copyright with the licensecheck(1) command.
+
+Files:     CMakeLists.txt
+           README.md
+           autostart/lxqt-schedule.desktop
+           docs/architecture.md
+           integration/bibit-intent/README.md
+           integration/bibit-intent/skills/schedule/handlers.py
+           integration/worldclock/README.md
+           integration/worldclock/worldclock-schedule-integration.patch
+           src/CMakeLists.txt
+           src/cli/CMakeLists.txt
+           src/cli/lxqt-schedule-ctl.cpp
+           src/main.cpp
+           src/scheduledaemon.cpp
+           src/scheduledaemon.h
+Copyright: __NO_COPYRIGHT_NOR_LICENSE__
+License:   __NO_COPYRIGHT_NOR_LICENSE__
+
+Files:     integration/bibit-intent/skills/schedule/skill.yaml
+Copyright: __NO_COPYRIGHT__ in: integration/bibit-intent/skills/schedule/skill.yaml
+License:   __UNKNOWN__
+ # Skill 依赖的系统命令（加载时只标记，运行时报明确错误）
+ requires:
+ - lxqt-schedule-ctl
+ .
+ # Skill 提供的工具
+ tools:
+
+#----------------------------------------------------------------------------
+# xml and html files (skipped):
+#         src/dbus/org.lxqt.Schedule.xml
+
+#----------------------------------------------------------------------------
+# Files marked as NO_LICENSE_TEXT_FOUND may be covered by the following
+# license/copyright files.

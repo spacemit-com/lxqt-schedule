@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=LXQt Schedule
+Name[zh_CN]=LXQt 日程
+Comment=Schedule reminder daemon
+Comment[zh_CN]=日程提醒守护进程
+Exec=lxqt-schedule
+OnlyShowIn=LXQt;
+X-LXQt-Module=true
+NoDisplay=true

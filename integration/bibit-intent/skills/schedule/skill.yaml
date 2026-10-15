@@ -1,0 +1,80 @@
+# 日程管理 Skill —— 通过 lxqt-schedule-ctl 调用 org.lxqt.Schedule D-Bus 服务
+# 创建 / 删除 / 查看日程，到期由 lxqt-schedule 守护进程通过
+# org.freedesktop.Notifications 弹通知（与 lxqt-notificationd 联动）。
+#
+# 时间语义由端侧模型从自然语言翻译成 `when`（如"明天下午三点"），
+# 具体解析放在 handlers.py，不占模型 prompt。
+
+name: schedule
+version: "1.0"
+display: "日程管理"
+description: "创建、删除、查看日程提醒；到期时弹出桌面通知"
+author: "bibit"
+
+# Skill 依赖的系统命令（加载时只标记，运行时报明确错误）
+requires:
+  - lxqt-schedule-ctl
+
+# Skill 提供的工具
+tools:
+
+  schedule_add:
+    display: "创建日程提醒"
+    display_en: "Create a schedule reminder with a title and a due time. Use when the user asks to remind them at some time, set a reminder/alarm/agenda, or schedule something to happen later. For viewing existing reminders use schedule_list; for cancelling one use schedule_remove."
+    short: "schedadd"
+    aliases: ["schedule_add", "创建日程", "新建日程", "添加日程", "提醒我", "定个提醒", "设置提醒", "闹钟", "定时提醒", "备忘"]
+    params:
+      title: {type: str}
+      when: {type: str}
+      repeat: {type: str, enum: [daily, weekly, monthly, yearly], default: ""}
+    routes:
+      rule:
+        # 只吃"提醒/日程/闹钟/定时"且带时间语义的句子；纯查询归 schedule_list。
+        patterns:
+          - "(?:提醒我|提醒|记得|别忘了|定时|闹钟).{0,24}(?P<when>明天|后天|大后天|今天|早上|上午|中午|下午|晚上|夜里|凌晨|\\d+分钟后|\\d+小时后|半小?时后|一刻钟后|\\d+点|\\d+[:：]\\d+|\\d+月\\d+[日号]|周[一二三四五六日天]|星期[一二三四五六日天]|礼拜[一二三四五六日天]).{0,20}"
+          - "(?:帮我|给我)?\\s*(?:定|设|加|建|创建|添加)(?:一个|个)?(?:日程|提醒|闹钟|备忘).{0,20}"
+          - "(?P<when>明天|后天|大后天|\\d+分钟后|\\d+小时后|半小?时后|\\d+[:：]\\d+|\\d+点).{0,12}(?:提醒|叫我|喊我|通知)我"
+        # keywords 必须带"提醒/日程/闹钟/定时"锚点，避免把"明天开会"这类纯陈述注入。
+        keywords: ["提醒我", "设置提醒", "定个提醒", "定时提醒", "创建日程", "新建日程",
+                   "添加日程", "定闹钟", "闹钟", "备忘", "别忘了", "记得提醒"]
+      local: "schedadd(title:..., when:...)"
+    handler: "schedule_add"
+    mcp:
+      group: control
+
+  schedule_remove:
+    display: "删除日程提醒"
+    display_en: "Delete or cancel one or more schedule reminders. Use when the user asks to cancel/delete/remove a reminder, alarm, or agenda item. Identify it by id (from schedule_list) or by title."
+    short: "schedrm"
+    aliases: ["schedule_remove", "删除日程", "取消日程", "删除提醒", "取消提醒", "删掉提醒", "关掉闹钟", "取消闹钟"]
+    params:
+      id: {type: str, default: ""}
+      title: {type: str, default: ""}
+    routes:
+      rule:
+        patterns:
+          - "(?:删除|取消|删掉|关掉|移除|去掉).{0,6}(?:日程|提醒|闹钟|备忘)(?:id\\s*)?\\s*(?P<id>\\d+)?"
+          - "(?:把|将)?\\s*(?P<title>.{1,24}?)\\s*(?:的)?\\s*(?:日程|提醒|闹钟)\\s*(?:删了|删掉|删除|取消|关掉)"
+        keywords: ["删除日程", "取消日程", "删除提醒", "取消提醒", "删掉提醒",
+                   "关掉闹钟", "取消闹钟", "移除提醒"]
+      local: "schedrm(id:...)"
+    handler: "schedule_remove"
+    mcp:
+      group: control
+
+  schedule_list:
+    display: "查看日程提醒"
+    display_en: "List upcoming schedule reminders. Use when the user asks what reminders or agendas they have, or wants to see their schedule. For creating one use schedule_add; for cancelling one use schedule_remove."
+    short: "schedls"
+    aliases: ["schedule_list", "查看日程", "我的日程", "有哪些日程", "查看提醒", "有哪些提醒", "待办提醒"]
+    params: {}
+    routes:
+      rule:
+        patterns:
+          - "(?:查看|看看|看|列出|显示|查).{0,4}(?:日程|提醒|闹钟|备忘)(?:列表|有哪些|是什么)?"
+          - "(?:我|我们).{0,2}(?:的)?(?:日程|提醒|闹钟).{0,4}(?:有哪些|是什么|怎么样)"
+        keywords: ["查看日程", "我的日程", "有哪些日程", "查看提醒", "有哪些提醒", "日程列表"]
+      local: "schedls()"
+    handler: "schedule_list"
+    mcp:
+      group: readonly

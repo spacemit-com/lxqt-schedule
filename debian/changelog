@@ -1,0 +1,13 @@
+lxqt-schedule (0.1.0) resolute-customization; urgency=medium
+
+  * Initial consolidated release of the LXQt schedule daemon and CLI.
+  * Provide session D-Bus APIs to create, update, list, and remove schedules.
+  * Persist schedules and deliver reminders through desktop notifications.
+  * Support daily, weekly, monthly, and yearly recurrence, including
+    repeat-only updates and clearing repeat rules.
+  * Detect identical due timestamps and mark conflicts in schedule listings.
+  * Include bibit-intent and worldclock integration resources.
+  * Document build requirements and CLI usage in English.
+  * Complete package metadata, enable hardening, and document desktop setup.
+
+ -- xiaogang-henry-jdsk <xiaogang.henry@spacemit.com>  Wed, 14 Oct 2026 20:11:21 -0700

@@ -1,0 +1,172 @@
+diff --git a/plugin-worldclock/lxqtworldclock.cpp b/plugin-worldclock/lxqtworldclock.cpp
+index b00ae11..de55ec8 100644
+--- a/plugin-worldclock/lxqtworldclock.cpp
++++ b/plugin-worldclock/lxqtworldclock.cpp
+@@ -40,6 +40,7 @@
+ #include <QTimer>
+ #include <QWheelEvent>
+ #include <QToolTip>
++#include <QCursor>
+ #include <QPainter>
+ #include <QPainterPath>
+ #include <QStyle> 
+@@ -48,6 +49,13 @@
+ #include <QTableView>
+ #include <QProcess>
+ #include <QSpinBox>
++#include <QDBusConnection>
++#include <QDBusInterface>
++#include <QDBusReply>
++#include <QJsonArray>
++#include <QJsonDocument>
++#include <QJsonObject>
++#include <QDateTime>
+ LXQtWorldClock::LXQtWorldClock(const ILXQtPanelPluginStartupInfo &startupInfo):
+     QObject(),
+     ILXQtPanelPlugin(startupInfo),
+@@ -77,6 +85,14 @@ LXQtWorldClock::LXQtWorldClock(const ILXQtPanelPluginStartupInfo &startupInfo):
+ 
+     settingsChanged();
+ 
++    QDBusConnection::sessionBus().connect(
++        QStringLiteral("org.lxqt.Schedule"),
++        QStringLiteral("/org/lxqt/Schedule"),
++        QStringLiteral("org.lxqt.Schedule"),
++        QStringLiteral("SchedulesChanged"),
++        this,
++        SLOT(refreshScheduleDates()));
++
+     mTimer->setTimerType(Qt::PreciseTimer);
+     connect(mTimer, &QTimer::timeout, this, &LXQtWorldClock::timeout);
+ 
+@@ -490,6 +506,7 @@ void LXQtWorldClock::activated(ActivationReason reason)
+ 	    mTopLeftDateLabel->setObjectName(QLatin1String("WorldClockDateLabel"));
+ 	    connect(m_calendarWidget, &QCalendarWidget::selectionChanged, this, &LXQtWorldClock::updateSpecificTimeLabel);
+             updateSpecificTimeLabel();
++            refreshScheduleDates();
+ 	  
+             QVBoxLayout* tabMainLayout = new QVBoxLayout();
+             tabMainLayout->setContentsMargins(0, 16, 269, 0);
+@@ -832,6 +849,34 @@ void MonthSelectionDialog::onItemClicked(QListWidgetItem *item)
+     accept();
+ }
+ 
++void LXQtWorldClock::refreshScheduleDates()
++{
++    if (!m_calendarWidget)
++        return;
++
++    QMap<QDate, QStringList> schedules;
++    QDBusInterface iface(QStringLiteral("org.lxqt.Schedule"),
++                         QStringLiteral("/org/lxqt/Schedule"),
++                         QStringLiteral("org.lxqt.Schedule"));
++    QDBusReply<QString> reply = iface.call(QStringLiteral("ListSchedules"));
++    if (reply.isValid()) {
++        const QJsonDocument doc = QJsonDocument::fromJson(reply.value().toUtf8());
++        const QJsonArray arr = doc.object().value(QLatin1String("schedules")).toArray();
++        for (const QJsonValue &v : arr) {
++            const QJsonObject obj = v.toObject();
++            const qlonglong dueEpoch = static_cast<qlonglong>(
++                obj.value(QLatin1String("due_epoch")).toDouble(0));
++            if (dueEpoch <= 0)
++                continue;
++            const QDateTime due = QDateTime::fromSecsSinceEpoch(dueEpoch);
++            const QString title = obj.value(QLatin1String("title")).toString();
++            schedules[due.date()].append(
++                due.time().toString(QLatin1String("HH:mm")) + QLatin1Char(' ') + title);
++        }
++    }
++    m_calendarWidget->setScheduleDates(schedules);
++}
++
+ CustomCalendarWidget::CustomCalendarWidget(QWidget *parent) : QCalendarWidget(parent) 
+ {
+     QTableView *tableView = findChild<QTableView*>();
+@@ -844,6 +889,28 @@ CustomCalendarWidget::CustomCalendarWidget(QWidget *parent) : QCalendarWidget(pa
+         yearSpinBox->setMinimum(1);
+         yearSpinBox->setMaximum(9999);
+     } 
++
++    connect(this, &QCalendarWidget::clicked, this, [this](const QDate &date) {
++        const QStringList items = m_scheduleDates.value(date);
++        if (items.isEmpty())
++            return;
++        QStringList lines;
++        lines << QLocale::system().toString(date, QLocale::LongFormat);
++        for (const QString &item : items)
++            lines << QStringLiteral("• ") + item;
++        QToolTip::showText(QCursor::pos(), lines.join(QLatin1Char('\n')), this);
++    });
++}
++
++void CustomCalendarWidget::setScheduleDates(const QMap<QDate, QStringList> &schedules)
++{
++    m_scheduleDates = schedules;
++    update();
++}
++
++QStringList CustomCalendarWidget::schedulesForDate(const QDate &date) const
++{
++    return m_scheduleDates.value(date);
+ }
+ 
+ bool CustomCalendarWidget::eventFilter(QObject *obj, QEvent *event) 
+@@ -873,8 +940,23 @@ bool CustomCalendarWidget::eventFilter(QObject *obj, QEvent *event)
+                         painter.drawEllipse(circleRect);
+                     }
+                 }
++
+                 return result; 
+             }
+         }
+         return QCalendarWidget::eventFilter(obj, event);
+ }
++
++void CustomCalendarWidget::paintCell(QPainter *painter, const QRect &rect, QDate date) const
++{
++    QCalendarWidget::paintCell(painter, rect, date);
++    if (m_scheduleDates.contains(date)) {
++        painter->save();
++        painter->setRenderHint(QPainter::Antialiasing);
++        QPoint center(rect.center().x(), rect.bottom() - 5);
++        painter->setBrush(QColor("#72e9c2"));
++        painter->setPen(Qt::NoPen);
++        painter->drawEllipse(center, 2, 2);
++        painter->restore();
++    }
++}
+diff --git a/plugin-worldclock/lxqtworldclock.h b/plugin-worldclock/lxqtworldclock.h
+index 883c9f6..d3a3987 100644
+--- a/plugin-worldclock/lxqtworldclock.h
++++ b/plugin-worldclock/lxqtworldclock.h
+@@ -30,6 +30,8 @@
+ #define LXQT_PANEL_WORLDCLOCK_H
+ 
+ #include <QTimeZone>
++#include <QSet>
++#include <QMap>
+ 
+ #include <QDialog>
+ #include <QLabel>
+@@ -68,6 +70,7 @@ public:
+     bool eventFilter(QObject * watched, QEvent * event);
+ 
+ private slots:
++    void refreshScheduleDates();
+     void timeout();
+     void wheelScrolled(int);
+     void updateTimeText();
+@@ -174,8 +177,13 @@ class CustomCalendarWidget : public QCalendarWidget
+     Q_OBJECT
+ public:
+     explicit CustomCalendarWidget(QWidget *parent = nullptr);
++    void setScheduleDates(const QMap<QDate, QStringList> &schedules);
++    QStringList schedulesForDate(const QDate &date) const;
+ protected:
+     bool eventFilter(QObject *obj, QEvent *event) override;
++    void paintCell(QPainter *painter, const QRect &rect, QDate date) const override;
++private:
++    QMap<QDate, QStringList> m_scheduleDates;
+ };
+ 
+ #endif // LXQT_PANEL_WORLDCLOCK_H
